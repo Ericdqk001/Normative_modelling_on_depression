@@ -13,7 +13,8 @@ dependencies = ["ruff",
 "pre-commit",
 "pandas",
 "matplotlib",
-"scikit-learn",]
+"scikit-learn",
+"multiviewae",]
 
 [tool.ruff]
 select = ["E", "F", "D", "I"]

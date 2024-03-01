@@ -8,6 +8,7 @@ setup(
         where="src",
         include=[
             "load*",
+            "preprocess*",
         ],
     ),
 )

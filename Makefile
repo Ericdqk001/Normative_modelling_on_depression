@@ -3,7 +3,6 @@
 
 GLOBAL_PYTHON = ~/.pyenv/versions/3.10.10/bin/python
 LOCAL_PYTHON = ./.venv/bin/python
-LOCAL_ACTIVATE = source ./.venv/bin/activate
 
 setup: venv install pre-commit
 
@@ -27,7 +26,7 @@ pre-commit:
 	pre-commit autoupdate
 
 # Compile requirements.txt
-pip-tools:
+refresh:
 	@echo "Compiling requirements.txt..."
 	pip-compile -o requirements.txt pyproject.toml
 	pip-sync
