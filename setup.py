@@ -9,6 +9,8 @@ setup(
         include=[
             "load*",
             "preprocess*",
+            "train*",
+            "models*",
         ],
     ),
 )
