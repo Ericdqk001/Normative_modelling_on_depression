@@ -15,7 +15,8 @@ dependencies = ["ruff",
 "matplotlib",
 "scikit-learn",
 "multiviewae",
-"ipykernel",]
+"ipykernel",
+"statsmodels",]
 
 [tool.ruff]
 select = ["E", "F", "D", "I"]

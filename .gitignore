@@ -162,3 +162,5 @@ cython_debug/
 # Data
 raw_data/
 processed_data/
+checkpoints/
+wandb/

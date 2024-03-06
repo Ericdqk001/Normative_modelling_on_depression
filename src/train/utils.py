@@ -1,153 +1,243 @@
-from os.path import join
+from pathlib import Path
 
-import matplotlib.pyplot as plt
-import numpy as np
 import pandas as pd
-import statsmodels as sm
 import torch
-from statsmodels.api import OLS
-from statsmodels.discrete.discrete_model import Logit
-from torch.utils.data import Dataset
+from load.load import MyDataset
+from models.VAE import VAE
+from sklearn.model_selection import KFold
+from torch.utils.data import DataLoader
+
+import wandb
+
+# Config
+
+train_data_path = "processed_data/ct_postCombat_residSexAge_060623.csv"
+val_data_path = "processed_data/ct_postCombat_residSexAge_060623.csv"
 
 
-class MyDataset_labels(Dataset):
-    def __init__(self, data, labels, indices=False, transform=None):
-        self.data = data
-        self.labels = labels
-        if isinstance(data, list) or isinstance(data, tuple):
-            self.data = [
-                torch.from_numpy(d).float() if isinstance(d, np.ndarray) else d
-                for d in self.data
-            ]
-            self.N = len(self.data[0])
-            self.shape = np.shape(self.data[0])
-        elif isinstance(data, np.ndarray):
-            self.data = torch.from_numpy(self.data).float()
-            self.N = len(self.data)
-            self.shape = np.shape(self.data)
-
-        self.labels = torch.from_numpy(self.labels).long()
-
-        self.transform = transform
-        self.indices = indices
-
-    def __getitem__(self, index):
-        if isinstance(self.data, list):
-            x = [d[index] for d in self.data]
-        else:
-            x = self.data[index]
-
-        if self.transform:
-            x = self.transform(x)
-        t = self.labels[index]
-        if self.indices:
-            return x, t, index
-        return x, t
-
-    def __len__(self):
-        return self.N
-
-
-class MyDataset(Dataset):
-    def __init__(self, data, indices=False, transform=None):
-        self.data = data
-        if isinstance(data, list) or isinstance(data, tuple):
-            self.data = [
-                torch.from_numpy(d).float() if isinstance(d, np.ndarray) else d
-                for d in self.data
-            ]
-            self.N = len(self.data[0])
-            self.shape = np.shape(self.data[0])
-        else:
-            if isinstance(data, np.ndarray):
-                self.data = torch.from_numpy(self.data).float()
-            self.N = len(self.data)
-            self.shape = np.shape(self.data)
-
-        self.transform = transform
-        self.indices = indices
-
-    def __getitem__(self, index):
-        if isinstance(self.data, list):
-            x = [d[index] for d in self.data]
-        else:
-            x = self.data[index]
-
-        if self.transform:
-            x = self.transform(x)
-
-        if self.indices:
-            return x, index
-        return x
-
-    def __len__(self):
-        return self.N
-
-
-def plot_losses(logger, path, title=""):
-    plt.figure()
-    plt.subplot(1, 2, 1)
-    plt.title("Loss values")
-    for k, v in logger.logs.items():
-        plt.plot(v, label=str(k))
-    plt.xlabel("epochs", fontsize=10)
-    plt.ylabel("loss", fontsize=10)
-    plt.legend()
-    plt.subplot(1, 2, 2)
-    plt.title("Loss relative values")
-    for k, v in logger.logs.items():
-        max_loss = 1e-8 + np.max(np.abs(v))
-        plt.plot(v / max_loss, label=str(k))
-    plt.legend()
-    plt.xlabel("epochs", fontsize=10)
-    plt.ylabel("loss", fontsize=10)
-    plt.tight_layout()
-    plt.savefig(join(path, "Losses{0}.png".format(title)))
-    plt.close()
-
-
-class Logger:
-    def __init__(self):
-        self.logs = {}
-
-    def on_train_init(self, keys):
-        for k in keys:
-            self.logs[k] = []
-
-    def on_step_fi(self, logs_dict):
-        for k, v in logs_dict.items():
-            self.logs[k].append(v.detach().cpu().numpy())
-
-
-def reconstruction_deviation(x, x_pred):
-    return np.sum((x - x_pred) ** 2, axis=1) / x.shape[1]
-
-
-def latent_deviation(mu_train, mu_sample, var_sample):
-    var = np.var(mu_train, axis=0)
-    return (
-        np.sum(
-            np.abs(mu_sample - np.mean(mu_train, axis=0)) / np.sqrt(var + var_sample),
-            axis=1,
-        )
-        / mu_sample.shape[1]
+def build_model(config, input_dim):
+    model = VAE(
+        input_dim=input_dim,
+        hidden_dim=config.hidden_dim,
+        latent_dim=config.latent_dim,
+        learning_rate=config.learning_rate,
+        non_linear=True,
     )
 
-
-def separate_latent_deviation(mu_train, mu_sample, var_sample):
-    var = np.var(mu_train, axis=0)
-    return (mu_sample - np.mean(mu_train, axis=0)) / np.sqrt(var + var_sample)
+    return model
 
 
-def latent_pvalues(latent, target, type):
-    pval_df = pd.DataFrame({"labels": ["const", "latent"]})
-    for i in range(latent.shape[1]):
-        latent_curr = latent[:, i]
-        latent_curr = sm.tools.tools.add_constant(latent_curr)
-        if type == "continuous":
-            model = OLS(target, latent_curr)
+# def build_loader(config):
+
+#     columns_to_drop = [
+#         "subjectkey",
+#         "sex",
+#         "interview_age",
+#         "eTIV",
+#         "has_clinical_pp",
+#         "ksads_dx",
+#     ]
+
+#     data = pd.read_csv(Path(train_data_path))
+
+#     features = data.drop(columns_to_drop, axis="columns").copy()
+
+#     input_dim = features.shape[1]
+
+#     train_data = features.sample(frac=0.8, random_state=42)
+
+#     val_data = features.drop(train_data.index)
+
+#     train_loader = DataLoader(
+#         MyDataset(train_data.to_numpy()),
+#         batch_size=config.batch_size,
+#         shuffle=True,
+#     )
+
+#     val_loader = DataLoader(
+#         MyDataset(val_data.to_numpy()),
+#         batch_size=config.batch_size,
+#         shuffle=True,
+#     )
+
+#     return train_loader, val_loader, input_dim
+
+
+def validate(model, val_loader, device):
+    model.eval()
+    total_val_loss = 0.0
+
+    with torch.no_grad():
+        for batch in val_loader:
+            batch = batch.to(device)
+            fwd_rtn = model.forward(batch)
+            val_loss = model.loss_function(batch, fwd_rtn)
+            batch_val_loss = val_loss["total"].item()
+            total_val_loss += batch_val_loss
+
+    mean_val_loss = total_val_loss / len(val_loader)
+
+    return mean_val_loss
+
+
+def train(
+    config,
+    model,
+    train_loader,
+    val_loader,
+):
+    DEVICE = torch.device("cuda" if torch.cuda.is_available() else "mps")
+
+    model.to(DEVICE)
+
+    best_val_loss = float("inf")
+    epochs_no_improve = 0
+
+    model_artifact = wandb.Artifact(wandb.run.name, type="model")
+
+    for epoch in range(config.epochs):
+        model.train()
+
+        for batch_idx, batch in enumerate(train_loader):
+            batch = batch.to(DEVICE)
+            fwd_rtn = model.forward(batch)
+            loss = model.loss_function(batch, fwd_rtn)
+            model.optimizer.zero_grad()
+            loss["total"].backward()
+            model.optimizer.step()
+
+        val_loss = validate(model, val_loader, DEVICE)
+
+        wandb.log({"val_loss": val_loss})
+
+        if val_loss < best_val_loss:
+            epochs_no_improve = 0
+            best_val_loss = val_loss
+
+            print("New best val loss:", val_loss)
+            print("at epoch:", epoch)
+
+            best_model = model.state_dict()
+
         else:
-            model = Logit(target, latent_curr)
-        model_fit = model.fit()
-        pval_df["latent {0}".format(i)] = list(model_fit.pvalues.values)
-    return pval_df
+            epochs_no_improve += 1
+
+        if epochs_no_improve >= 5:
+            print("Early stopping at epoch:", epoch)
+
+            check_points_path = Path("checkpoints", "s_VAE")
+
+            if not check_points_path.exists():
+                check_points_path.mkdir(parents=True)
+
+            torch.save(
+                best_model,
+                Path(check_points_path, f"{epoch - 3}_model_weights.pt"),
+            )
+
+            model_artifact.add_file(
+                Path(check_points_path, f"{epoch - 3}_model_weights.pt"),
+            )
+
+            wandb.run.log_artifact(model_artifact)
+
+            return best_val_loss
+
+
+def train_k_fold(config, n_splits=5):
+    # Assuming DEVICE setup is the same
+    DEVICE = torch.device("cuda" if torch.cuda.is_available() else "mps")
+
+    # Load and prepare your dataset
+    data = pd.read_csv(Path(train_data_path))
+    columns_to_drop = [
+        "subjectkey",
+        "sex",
+        "interview_age",
+        "eTIV",
+        "has_clinical_pp",
+        "ksads_dx",
+    ]
+
+    features = data.drop(columns_to_drop, axis="columns").copy()
+    dataset = features.to_numpy()
+
+    kf = KFold(n_splits=n_splits, shuffle=True, random_state=42)
+
+    fold = 0
+    total_val_loss = 0.0
+    for train_index, val_index in kf.split(dataset):
+        print(f"Training on fold {fold+1}...")
+        # Split dataset into training and validation sets for the current fold
+        train_data, val_data = dataset[train_index], dataset[val_index]
+
+        # Here, you could modify build_loader to accept train_data and val_data directly,
+        # or just create the DataLoader instances directly in this loop.
+        train_loader = DataLoader(
+            MyDataset(train_data), batch_size=config.batch_size, shuffle=True
+        )
+        val_loader = DataLoader(
+            MyDataset(val_data), batch_size=config.batch_size, shuffle=False
+        )
+
+        # Get input_dim based on the dataset
+        input_dim = train_data.shape[1]
+
+        model = build_model(config, input_dim).to(DEVICE)
+
+        val_loss = train(config, model, train_loader, val_loader)
+
+        total_val_loss += val_loss
+
+        fold += 1
+
+    return total_val_loss / n_splits
+
+
+def main():
+    wandb.init()
+    val_loss = train_k_fold(wandb.config)
+    wandb.log({"score": val_loss})
+
+
+if __name__ == "__main__":
+    sweep_configuration = {
+        "method": "bayes",
+        "name": "sweep",
+        "metric": {"goal": "maximize", "name": "val_loss"},
+        "parameters": {
+            "batch_size": {"values": [32, 64, 128]},
+            "learning_rate": {
+                "values": [
+                    0.001,
+                    0.002,
+                    0.003,
+                    0.004,
+                    0.005,
+                    0.006,
+                    0.007,
+                    0.008,
+                    0.009,
+                    0.01,
+                ]
+            },
+            "latent_dim": {"values": [5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]},
+            "epochs": {"value": 500},
+            "hidden_dim": {
+                "values": [
+                    [40, 40],
+                    [50, 50],
+                    [60, 60],
+                    [40, 40, 40],
+                    [50, 50, 50],
+                    [60, 60, 60],
+                ]
+            },
+        },
+    }
+
+    sweep_id = wandb.sweep(
+        sweep=sweep_configuration, project="VAE sweep k-fold ct 5 epoch early stop"
+    )
+
+    wandb.agent(sweep_id, function=main, count=20)
