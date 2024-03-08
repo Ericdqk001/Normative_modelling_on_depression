@@ -16,7 +16,8 @@ dependencies = ["ruff",
 "scikit-learn",
 "multiviewae",
 "ipykernel",
-"statsmodels",]
+"statsmodels",
+"seaborn",]
 
 [tool.ruff]
 select = ["E", "F", "D", "I"]
