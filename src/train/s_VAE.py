@@ -1,3 +1,5 @@
+import json
+import pickle
 from pathlib import Path
 
 import pandas as pd
@@ -5,14 +7,20 @@ import torch
 from load.load import MyDataset
 from models.VAE import VAE
 from sklearn.model_selection import KFold
+from sklearn.preprocessing import StandardScaler
 from torch.utils.data import DataLoader
 
 import wandb
 
 # Config
 
-train_data_path = "processed_data/ct_postCombat_residSexAge_060623.csv"
-val_data_path = "processed_data/ct_postCombat_residSexAge_060623.csv"
+F_TRAIN_PATH = "processed_data/ct_postCombat_residSexAge_060623.csv"
+
+with open("ABCD_mVAE_LizaEric/data/train_val_subs.pkl", "rb") as f:
+    TRAIN_VAL_SUBS = pickle.load(f)
+
+with open(Path("ABCD_mVAE_LizaEric/data", "phenotype_roi_mapping.json")) as f:
+    phenotype_roi_mapping = json.loads(f.read())
 
 
 def build_model(config, input_dim):
@@ -49,6 +57,7 @@ def train(
     model,
     train_loader,
     val_loader,
+    tolerance=10,
 ):
     DEVICE = torch.device("cuda" if torch.cuda.is_available() else "mps")
 
@@ -86,21 +95,23 @@ def train(
         else:
             epochs_no_improve += 1
 
-        if epochs_no_improve >= 5:
+        if epochs_no_improve >= tolerance:
             print("Early stopping at epoch:", epoch)
 
-            check_points_path = Path("checkpoints", "s_VAE")
+            check_points_path = Path(
+                "content", "drive", "MyDrive", "checkpoints_MRES_fMRI", "s_VAE"
+            )
 
             if not check_points_path.exists():
                 check_points_path.mkdir(parents=True)
 
             torch.save(
                 best_model,
-                Path(check_points_path, f"{epoch - 3}_model_weights.pt"),
+                Path(check_points_path, f"{epoch - tolerance}_model_weights.pt"),
             )
 
             model_artifact.add_file(
-                Path(check_points_path, f"{epoch - 3}_model_weights.pt"),
+                Path(check_points_path, f"{epoch - tolerance}_model_weights.pt"),
             )
 
             wandb.run.log_artifact(model_artifact)
@@ -108,32 +119,34 @@ def train(
             return best_val_loss
 
 
-def train_k_fold(config, n_splits=5):
+def train_k_fold(
+    config,
+    n_splits=5,
+):
     # Assuming DEVICE setup is the same
     DEVICE = torch.device("cuda" if torch.cuda.is_available() else "mps")
 
     # Load and prepare your dataset
-    data = pd.read_csv(Path(train_data_path))
-    columns_to_drop = [
-        "subjectkey",
-        "sex",
-        "interview_age",
-        "eTIV",
-        "has_clinical_pp",
-        "ksads_dx",
-    ]
+    data = pd.read_csv(Path(F_TRAIN_PATH), index_col=0)
 
-    features = data.drop(columns_to_drop, axis="columns").copy()
-    dataset = features.to_numpy()
+    scaler = StandardScaler()
+
+    train_dataset = scaler.fit_transform(
+        data.loc[TRAIN_VAL_SUBS, phenotype_roi_mapping["ct"]]
+    )
 
     kf = KFold(n_splits=n_splits, shuffle=True, random_state=42)
 
     fold = 0
     total_val_loss = 0.0
-    for train_index, val_index in kf.split(dataset):
+    for train_index, val_index in kf.split(train_dataset):
         print(f"Training on fold {fold+1}...")
         # Split dataset into training and validation sets for the current fold
-        train_data, val_data = dataset[train_index], dataset[val_index]
+
+        train_data, val_data = (
+            train_dataset[train_index],
+            train_dataset[val_index],
+        )
 
         # Here, you could modify build_loader to accept train_data and val_data directly,
         # or just create the DataLoader instances directly in this loop.
@@ -161,14 +174,14 @@ def train_k_fold(config, n_splits=5):
 def main():
     wandb.init()
     val_loss = train_k_fold(wandb.config)
-    wandb.log({"score": val_loss})
+    wandb.log({"average_val_loss": val_loss})
 
 
 if __name__ == "__main__":
     sweep_configuration = {
         "method": "bayes",
         "name": "sweep",
-        "metric": {"goal": "maximize", "name": "val_loss"},
+        "metric": {"goal": "maximize", "name": "average_val_loss"},
         "parameters": {
             "batch_size": {"values": [32, 64, 128]},
             "learning_rate": {
@@ -190,10 +203,14 @@ if __name__ == "__main__":
             "hidden_dim": {
                 "values": [
                     [40, 40],
+                    [45, 45],
                     [50, 50],
+                    [55, 55],
                     [60, 60],
                     [40, 40, 40],
+                    [45, 45, 45],
                     [50, 50, 50],
+                    [55, 55, 55],
                     [60, 60, 60],
                 ]
             },
@@ -201,7 +218,7 @@ if __name__ == "__main__":
     }
 
     sweep_id = wandb.sweep(
-        sweep=sweep_configuration, project="VAE sweep k-fold ct 5 epoch early stop"
+        sweep=sweep_configuration, project="VAE sweep 5-fold structural local"
     )
 
-    wandb.agent(sweep_id, function=main, count=20)
+    wandb.agent(sweep_id, function=main, count=50)

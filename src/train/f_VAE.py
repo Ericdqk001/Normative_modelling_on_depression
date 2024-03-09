@@ -2,6 +2,7 @@ import pickle
 from pathlib import Path
 
 import pandas as pd
+import psutil
 import torch
 from load.load import MyDataset
 from models.VAE import VAE
@@ -12,8 +13,32 @@ import wandb
 
 # Config
 
+
+def check_mps_memory():
+    process = psutil.Process()
+    mem_info = process.memory_info()
+    print("Memory used:", mem_info.rss / 1024 / 1024 / 1024, "GB")
+    print("Virtual memory used:", mem_info.vms / 1024 / 1024 / 1024, "GB")
+
+    vm_info = psutil.virtual_memory()
+    print("Total virtual memory:", vm_info.total / 1024 / 1024 / 1024, "GB")
+    print("Available virtual memory:", vm_info.available / 1024 / 1024 / 1024, "GB")
+    print("Used virtual memory:", vm_info.used / 1024 / 1024 / 1024, "GB")
+    print("Memory percent used:", vm_info.percent, "%")
+    print("---------")
+
+    return {
+        "memory used": mem_info.rss / 1024 / 1024 / 1024,
+        "virtual memory used": mem_info.vms / 1024 / 1024 / 1024,
+        "total virtual memory": vm_info.total / 1024 / 1024 / 1024,
+        "available virtual memory": vm_info.available / 1024 / 1024 / 1024,
+        "used virtual memory": vm_info.used / 1024 / 1024 / 1024,
+        "memory percent used": vm_info.percent,
+    }
+
+
 TRAIN_PATH = Path(
-    "processed_data/rsfmri_gordon_no_dup_postCombat_residSexAge_060623.csv"
+    "ABCD_mVAE_LizaEric/data/rsfmri_gordon_no_dup_postCombat_residSexAge_060623.csv"
 )
 
 with open("ABCD_mVAE_LizaEric/data/train_val_subs.pkl", "rb") as f:
@@ -67,6 +92,7 @@ def train(
     model_artifact = wandb.Artifact(wandb.run.name, type="model")
 
     for epoch in range(config.epochs):
+        print(check_mps_memory())
         model.train()
 
         for batch_idx, batch in enumerate(train_loader):
