@@ -1,19 +1,17 @@
+import json
 import pickle
 from pathlib import Path
 
 import matplotlib.pyplot as plt
 import pandas as pd
 import torch
-from discover.utils import (
-    latent_deviation,
-    separate_latent_deviation,
-)
+from discover.utils import latent_deviation, latent_pvalues, separate_latent_deviation
 from models.VAE import VAE
 from sklearn.preprocessing import StandardScaler
 
-DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+DEVICE = torch.device("cuda" if torch.cuda.is_available() else "mps")
 
-DATA_PATH = "ABCD_mVAE_LizaEric/data/rsfmri_gordon_postCombat_residSexAge_060623.csv"
+DATA_PATH = "processed_data/ct_postCombat_residSexAge_060623.csv"
 
 DX_PATH = "ABCD_mVAE_LizaEric/data/all_psych_dx_r5.csv"
 
@@ -23,23 +21,27 @@ with open(Path("ABCD_mVAE_LizaEric/data/train_val_subs.pkl"), "rb") as f:
 with open(Path("ABCD_mVAE_LizaEric/data/subs_test.pkl"), "rb") as f:
     TEST_SUBS = pickle.load(f)
 
+with open(Path("ABCD_mVAE_LizaEric/data", "phenotype_roi_mapping.json")) as f:
+    phenotype_roi_mapping = json.loads(f.read())
 
-check_point_path = Path("artifacts/bright-donkey-3:v0/model_weights.pt")
+check_point_path = Path("artifacts/autumn-disco-2:v0/model_weights.pt")
 
 model_config = {
+    "batch_size": 64,
     "hidden_dim": [45, 45],
     "latent_dim": 15,
     "learning_rate": 0.001,
+    "epochs": round((251 + 260 + 224 + 260 + 250) / 5),
 }
 
 diagnoses = [
-    "Has_ADHD",
+    # "Has_ADHD",
     "Has_Depression",
     "Has_Bipolar",
     "Has_Anxiety",
-    "Has_OCD",
-    "Has_ASD",
-    "Has_DBD",
+    # "Has_OCD",
+    # "Has_ASD",
+    # "Has_DBD",
 ]
 
 overall_diagnosis = "psych_dx"
@@ -53,7 +55,7 @@ def process():
 
     scaler = StandardScaler()
 
-    columns_to_scale = data.columns[0:93]
+    columns_to_scale = phenotype_roi_mapping["ct"]
 
     train_values = data_to_scaled.loc[TRAIN_VAL_SUBS, columns_to_scale]
     scaled_train_values = scaler.fit_transform(train_values)
@@ -82,12 +84,7 @@ def process():
     )
     model.to(DEVICE)
 
-    model.load_state_dict(
-        torch.load(
-            check_point_path,
-            map_location=DEVICE,
-        ),
-    )
+    model.load_state_dict(torch.load(check_point_path))
 
     test_latent, test_var = model.pred_latent(test_data, DEVICE)
     train_latent, _ = model.pred_latent(train_data, DEVICE)
@@ -109,11 +106,11 @@ def process():
         train_latent, test_latent_aligned, test_var_aligned
     )
 
-    deviation = separate_latent_deviation(
+    individual_deviation = separate_latent_deviation(
         train_latent, test_latent_aligned, test_var_aligned
     )
     for i in range(model_config["latent_dim"]):
-        output_data["latent_deviation_{0}".format(i)] = deviation[:, i]
+        output_data["latent_deviation_{0}".format(i)] = individual_deviation[:, i]
     ###
 
     return output_data
@@ -166,6 +163,16 @@ def plot_latent_deviation(
     plt.show()
 
 
+def get_latent_deviation_pvalues(
+    latent_deviations,
+    output_data,
+    diagnosis,
+):
+    DX_pval = latent_pvalues(latent_deviations, output_data[diagnosis], type="discrete")
+
+    return DX_pval
+
+
 if __name__ == "__main__":
     output_data = process()
 
@@ -173,3 +180,44 @@ if __name__ == "__main__":
 
     # for i in range(model_config["latent_dim"]):
     #     plot_latent_deviation(output_data, deviation_dim=f"latent_deviation_{i}")
+
+    all_dx_dim_pvalues = {}
+
+    dx_global_pvalues = {}
+
+    for diagnosis in diagnoses:
+        print("global")
+        print(diagnosis)
+        pvalues = get_latent_deviation_pvalues(
+            output_data[["latent_deviation"]].to_numpy(), output_data, diagnosis
+        )
+        print(pvalues)
+
+        dx_global_pvalues[diagnosis] = pvalues
+
+    all_dx_dim_pvalues["global_latent"] = dx_global_pvalues
+
+    dx_individual_pvalues = {}
+
+    for diagnosis in diagnoses:
+        print("individual")
+
+        print(diagnosis)
+
+        dim_pvalues = {}
+
+        for i in range(model_config["latent_dim"]):
+            dim_pvalues[f"latent_dim_{i}"] = get_latent_deviation_pvalues(
+                output_data[[f"latent_deviation_{i}"]].to_numpy(),
+                output_data,
+                diagnosis,
+            )
+
+            print(dim_pvalues[f"latent_dim_{i}"])
+
+        dx_individual_pvalues[diagnosis] = dim_pvalues
+
+    all_dx_dim_pvalues["individual_latent"] = dx_individual_pvalues
+
+    # with open("latent_deviation_pvalues.json", "w") as f:
+    #     json.dump(all_dx_dim_pvalues, f)

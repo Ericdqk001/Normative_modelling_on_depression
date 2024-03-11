@@ -1,46 +1,8 @@
-from os.path import join
-
-import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import statsmodels as sm
 from statsmodels.api import OLS
 from statsmodels.discrete.discrete_model import Logit
-
-
-def plot_losses(logger, path, title=""):
-    plt.figure()
-    plt.subplot(1, 2, 1)
-    plt.title("Loss values")
-    for k, v in logger.logs.items():
-        plt.plot(v, label=str(k))
-    plt.xlabel("epochs", fontsize=10)
-    plt.ylabel("loss", fontsize=10)
-    plt.legend()
-    plt.subplot(1, 2, 2)
-    plt.title("Loss relative values")
-    for k, v in logger.logs.items():
-        max_loss = 1e-8 + np.max(np.abs(v))
-        plt.plot(v / max_loss, label=str(k))
-    plt.legend()
-    plt.xlabel("epochs", fontsize=10)
-    plt.ylabel("loss", fontsize=10)
-    plt.tight_layout()
-    plt.savefig(join(path, "Losses{0}.png".format(title)))
-    plt.close()
-
-
-class Logger:
-    def __init__(self):
-        self.logs = {}
-
-    def on_train_init(self, keys):
-        for k in keys:
-            self.logs[k] = []
-
-    def on_step_fi(self, logs_dict):
-        for k, v in logs_dict.items():
-            self.logs[k].append(v.detach().cpu().numpy())
 
 
 def reconstruction_deviation(x, x_pred):
@@ -75,3 +37,39 @@ def latent_pvalues(latent, target, type):
         model_fit = model.fit()
         pval_df["latent {0}".format(i)] = list(model_fit.pvalues.values)
     return pval_df
+
+
+# def latent_deviation(cohort, holdout):
+#     if cohort.ndim == 1:
+#         print("hello")
+#         latent_dim = 1
+#         mean_holdout = np.mean(holdout)
+#         sd_holdout = np.std(holdout)
+#         z_scores = (cohort - mean_holdout) / sd_holdout
+#     else:
+#         latent_dim = cohort.shape[1]
+#         mean_holdout = np.mean(holdout, axis=0)
+#         sd_holdout = np.std(holdout, axis=0)
+#         z_scores = (
+#             np.sum(np.abs(cohort - mean_holdout) / sd_holdout, axis=1) / latent_dim
+#         )
+#     return z_scores
+
+
+# def recon_deviation(cohort, recon):
+#     feat_dim = cohort.shape[1]
+#     dev = np.sum(np.sqrt((cohort - recon) ** 2), axis=1) / feat_dim
+#     return dev
+
+
+# def latent_deviations_mahalanobis_across_sig(cohort, train):
+#     latent_dim = cohort.shape[1]
+#     dists = calc_robust_mahalanobis_distance(cohort, train)
+#     pvals = 1 - chi2.cdf(dists, latent_dim - 1)
+#     return dists, pvals
+
+
+# def calc_robust_mahalanobis_distance(values, train_values):
+#     robust_cov = MinCovDet(random_state=42).fit(train_values)
+#     mahal_robust_cov = robust_cov.mahalanobis(values)
+#     return mahal_robust_cov

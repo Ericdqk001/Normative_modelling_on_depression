@@ -166,3 +166,6 @@ checkpoints/
 wandb/
 ABCD_mVAE_LizaEric/
 content/
+artifacts/
+plots/
+deviation_plots/
