@@ -130,8 +130,6 @@ f_train_data = torch.tensor(
     dtype=torch.float32,
 )
 
-print(f_train_data.shape)
-
 train_data = [s_train_data, f_train_data]
 
 input_dims = [train_data[0].shape[1], train_data[1].shape[1]]
@@ -143,18 +141,26 @@ latent_dim = [10, 15, 20]
 hidden_layer_dim = [[74, 37], [37, 37, 37], [74, 74, 74]]
 beta = [1]
 non_linear = [True]
+batch_size = [64, 128, 256, 512]
+learning_rate = [
+    0.001,
+    0.005,
+    0.01,
+]
+
 
 parameters = {
     "z_dim": latent_dim,
     "hidden_layer_dim": hidden_layer_dim,
     "beta": beta,
     "non_linear": non_linear,
+    "batch_size": batch_size,
 }
 
 keys, values = zip(*parameters.items())
 permutations_dicts = [dict(zip(keys, v)) for v in itertools.product(*values)]
-max_epochs = 50
-batch_size = 512
+max_epochs = 5000
+
 
 for i, param_dict in enumerate(permutations_dicts):
     dir = f"results/two_views/mvae_{curr_phenotype}_two_Views_param_comb{i}_010624"
@@ -172,6 +178,9 @@ for i, param_dict in enumerate(permutations_dicts):
                 "hidden_layer_dim": param_dict["hidden_layer_dim"][::-1],
                 "non_linear": param_dict["non_linear"],
             }
+        },
+        "datamodule": {
+            "batch_size": param_dict["batch_size"],
         },
     }
 
@@ -196,6 +205,12 @@ for i, param_dict in enumerate(permutations_dicts):
         input_dim=input_dims,
     )
 
-    mvae.fit(train_data[0], train_data[1], max_epochs=max_epochs, batch_size=batch_size)
+    mvae.fit(
+        train_data[0],
+        train_data[1],
+        max_epochs=max_epochs,
+        batch_size=param_dict["batch_size"],
+    )
 
+    # mvae.validation_step()
 # %%

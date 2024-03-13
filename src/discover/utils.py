@@ -123,6 +123,50 @@ def process(
     return output_data
 
 
+def process_mvae(
+    model,
+    train_data,
+    test_data,
+    dx_path,
+):
+    dx_data = pd.read_csv(Path(dx_path), index_col=0)
+
+    output_data = test_data.join(dx_data, how="inner")
+
+    retained_indexes = output_data.index
+    mask = test_data.index.isin(retained_indexes)
+
+    train_latent = model.encode(train_data)
+
+    train_latent_mu = train_latent[0].loc.detach().numpy()
+
+    model.eval()
+
+    mvae_latent = model.encode(test_data)
+
+    test_latent_mu, test_latent_std = (
+        mvae_latent[0].loc.detach().numpy(),
+        mvae_latent[0].scale.detach().numpy(),
+    )
+
+    test_latent_mu_aligned = test_latent_mu[mask]
+    test_latent_std_aligned = test_latent_std[mask]
+
+    # Square the standard deviation to get the variance as the function expects variance
+    output_data["latent_deviation"] = latent_deviation(
+        train_latent_mu, test_latent_mu_aligned, test_latent_std_aligned**2
+    )
+
+    individual_deviation = separate_latent_deviation(
+        train_latent_mu, test_latent_mu_aligned, test_latent_std_aligned**2
+    )
+
+    for i in range(model.z_dim):
+        output_data[f"latent_deviation_{i}"] = individual_deviation[:, i]
+
+    return output_data
+
+
 def plot_latent_deviation(
     output_data,
     diagnoses,

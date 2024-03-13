@@ -170,3 +170,4 @@ artifacts/
 plots/
 deviation_plots/
 results/
+src/mcvae/

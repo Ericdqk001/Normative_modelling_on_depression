@@ -6,7 +6,7 @@ model:
   z_dim: 10
   beta: 1
   join_type: "PoE"
-  sparse: True
+  sparse: False
   threshold: 0.2
   warmup: 10
   learning_rate: 0.001
@@ -15,7 +15,10 @@ model:
 
 datamodule:
   _target_: multiviewae.base.dataloaders.MultiviewDataModule
-  is_validate: False
+  batch_size: 64
+  is_validate: True
+
+  train_size: 0.9
 
 encoder:
   default:

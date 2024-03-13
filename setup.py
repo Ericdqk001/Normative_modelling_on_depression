@@ -11,6 +11,8 @@ setup(
             "preprocess*",
             "train*",
             "models*",
+            "tune*",
+            "discover*",
         ],
     ),
 )

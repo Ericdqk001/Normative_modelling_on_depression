@@ -36,13 +36,13 @@ model_config = {
 }
 
 diagnoses = [
-    # "Has_ADHD",
+    "Has_ADHD",
     "Has_Depression",
     "Has_Bipolar",
     "Has_Anxiety",
-    # "Has_OCD",
-    # "Has_ASD",
-    # "Has_DBD",
+    "Has_OCD",
+    "Has_ASD",
+    "Has_DBD",
 ]
 
 overall_diagnosis = "psych_dx"

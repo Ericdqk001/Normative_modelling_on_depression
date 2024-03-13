@@ -38,8 +38,8 @@ model_config = {
 diagnoses = [
     # "Has_ADHD",
     "Has_Depression",
-    "Has_Bipolar",
-    "Has_Anxiety",
+    # "Has_Bipolar",
+    # "Has_Anxiety",
     # "Has_OCD",
     # "Has_ASD",
     # "Has_DBD",
