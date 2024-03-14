@@ -1,4 +1,5 @@
 from pathlib import Path
+from typing import List
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -46,18 +47,36 @@ def latent_pvalues(latent, target, type):
 
 
 def process(
-    data_path,
-    features,
-    train_subjects,
-    test_subjects,
-    check_point_path,
-    model_config,
-    dx_path,
-    device,
-):
+    data_path: pd.DataFrame,
+    features: list,
+    train_subjects: list,
+    test_subjects: list,
+    check_point_path: Path,
+    model_config: dict,
+    dx_path: Path,
+    device: torch.device,
+) -> pd.DataFrame:
+    """This function returns an output_data dataframe which contains the latent.
+
+    Deviation and individual latent deviation for each subject.
+
+    Args:
+        data_path (pd.DataFrame): The path to the whole data
+        features (list): The features to be used in the model
+        train_subjects (list): The list of subjects to be used in the training set
+        test_subjects (list): The list of subjects to be used in the test set
+        check_point_path (Path): The path to the trained model
+        model_config (dict): The model configuration
+        dx_path (Path): The path to the diagnosis data
+        device (torch.device): The device to be used for the model
+
+    Returns:
+        pd.DataFrame: The output data with global latent deviation and individual
+        latent deviations
+    """
     data = pd.read_csv(Path(data_path), index_col=0)
 
-    ### Within this block of code, the train/test data is independently scaled and placed back to the original dataframe
+    ### Within this block of code, the train/test data is scaled and placed back.
     data_to_scaled = data.copy()
 
     scaler = StandardScaler()
@@ -98,7 +117,8 @@ def process(
 
     dx_data = pd.read_csv(Path(dx_path), index_col=0)
 
-    ### NOTE Some test samples are not in the dx_data (n = 82), so we need to remove them from the test latents.
+    ### NOTE Some test samples are not in the dx_data (n = 82), so we need to remove
+    # them from the test latents.
     output_data = test_data.join(dx_data, how="inner")
 
     retained_indexes = output_data.index
@@ -123,30 +143,29 @@ def process(
     return output_data
 
 
-def process_mvae(
+def process_mVAE(
     model,
-    train_data,
-    test_data,
-    dx_path,
+    test_pd: pd.DataFrame,
+    dx_data: pd.DataFrame,
+    train_data: List[torch.Tensor],
+    test_data: List[torch.Tensor],
 ):
-    dx_data = pd.read_csv(Path(dx_path), index_col=0)
-
-    output_data = test_data.join(dx_data, how="inner")
+    output_data = test_pd.join(dx_data, how="inner")
 
     retained_indexes = output_data.index
-    mask = test_data.index.isin(retained_indexes)
+    mask = test_pd.index.isin(retained_indexes)
+
+    model.eval()
 
     train_latent = model.encode(train_data)
 
     train_latent_mu = train_latent[0].loc.detach().numpy()
 
-    model.eval()
-
-    mvae_latent = model.encode(test_data)
+    test_latent = model.encode(test_data)
 
     test_latent_mu, test_latent_std = (
-        mvae_latent[0].loc.detach().numpy(),
-        mvae_latent[0].scale.detach().numpy(),
+        test_latent[0].loc.detach().numpy(),
+        test_latent[0].scale.detach().numpy(),
     )
 
     test_latent_mu_aligned = test_latent_mu[mask]
@@ -175,7 +194,7 @@ def plot_latent_deviation(
 ):
     # Setup the matplotlib figure and axes
     fig, ax = plt.subplots(figsize=(12, 8))  # Adjust the figure size as needed
-    fig.suptitle("Distribution of Latent Deviation by Diagnosis")
+    fig.suptitle("")
 
     # To store data for boxplot
     data_to_plot = []
@@ -185,8 +204,6 @@ def plot_latent_deviation(
         deviation_dim
     ]
 
-    print(len(control_data))
-
     if not control_data.empty:
         data_to_plot.append(control_data)
         labels.append("Control")
@@ -195,7 +212,6 @@ def plot_latent_deviation(
         # Filter output_data for rows where diagnosis is True
         output_data[diagnosis] = output_data[diagnosis].replace(True, 1)
         filtered_data = output_data[output_data[diagnosis] == 1][deviation_dim]
-        print(len(filtered_data))
         if not filtered_data.empty:
             data_to_plot.append(filtered_data)
             labels.append(diagnosis)
@@ -203,8 +219,13 @@ def plot_latent_deviation(
     # Create the box plot
     ax.boxplot(data_to_plot, labels=labels, notch=True, patch_artist=True)
 
-    ax.set_ylabel(deviation_dim)
-    ax.set_xlabel("Diagnosis")
+    ax.set_ylabel(deviation_dim, fontweight="bold")
+    ax.set_xlabel("Diagnosis", fontweight="bold")
+
+    # Set axis and tick labels to bold
+    for label in ax.get_xticklabels() + ax.get_yticklabels():
+        label.set_fontweight("bold")
+
     plt.xticks(rotation=45)
     plt.grid(True)
     plt.tight_layout(rect=[0, 0.03, 1, 0.95])
@@ -234,6 +255,64 @@ def filter_controls(output_data, diagnosis):
     filtered_data = output_data[~mask]
 
     return filtered_data
+
+
+# def compute_deviations_pvalues(output_data, diagnoses):
+#     dx_global_pvalues = {}
+
+#     for diagnosis in diagnoses:
+#         print("global")
+#         print(diagnosis)
+
+#         filtered_controls = filter_controls(output_data, diagnosis)
+
+#         pvalues = get_latent_deviation_pvalues(
+#             output_data[["latent_deviation"]].to_numpy(), output_data, diagnosis
+#         )
+
+#         dx_global_pvalues[diagnosis] = pvalues.iloc[1][1]
+
+#     dx_individual_pvalues = {}
+
+#     for diagnosis in diagnoses:
+#         print("individual")
+
+#         print(diagnosis)
+
+#         dim_pvalues = {}
+
+#         for i in range(mvae.z_dim):
+#             individual_deviation = get_latent_deviation_pvalues(
+#                 output_data[[f"latent_deviation_{i}"]].to_numpy(),
+#                 output_data,
+#                 diagnosis,
+#             )
+
+#             dim_pvalues[f"latent_dim_{i}"] = individual_deviation.iloc[1][1]
+
+#             print(dim_pvalues[f"latent_dim_{i}"])
+
+#         dx_individual_pvalues[diagnosis] = dim_pvalues
+
+#     print(dx_global_pvalues)
+
+#     print(dx_individual_pvalues)
+
+#     from statsmodels.stats.multitest import multipletests
+
+#     # Flatten your dictionary of p-values into a single list
+#     p_values = [
+#         value
+#         for condition in dx_individual_pvalues.values()
+#         for value in condition.values()
+#     ]
+
+#     # Perform FDR correction
+#     _, p_values_corrected, _, _ = multipletests(p_values, alpha=0.05, method="fdr_bh")
+
+#     # sum the number of significant p-values
+
+#     print(sum(p_values_corrected < 0.05))
 
 
 # def latent_deviation(cohort, holdout):

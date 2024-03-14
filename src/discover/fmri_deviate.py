@@ -12,9 +12,11 @@ from discover.utils import (
 
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-DATA_PATH = "ABCD_mVAE_LizaEric/data/rsfmri_gordon_postCombat_residSexAge_060623.csv"
+DATA_PATH = Path(
+    "ABCD_mVAE_LizaEric/data/rsfmri_gordon_postCombat_residSexAge_060623.csv"
+)
 
-DX_PATH = "ABCD_mVAE_LizaEric/data/all_psych_dx_r5.csv"
+DX_PATH = Path("ABCD_mVAE_LizaEric/data/all_psych_dx_r5.csv")
 
 with open(Path("ABCD_mVAE_LizaEric/data/train_val_subs.pkl"), "rb") as f:
     TRAIN_VAL_SUBS = pickle.load(f)
@@ -36,13 +38,13 @@ model_config = {
 }
 
 diagnoses = [
-    # "Has_ADHD",
+    "Has_ADHD",
     "Has_Depression",
-    # "Has_Bipolar",
-    # "Has_Anxiety",
-    # "Has_OCD",
-    # "Has_ASD",
-    # "Has_DBD",
+    "Has_Bipolar",
+    "Has_Anxiety",
+    "Has_OCD",
+    "Has_ASD",
+    "Has_DBD",
 ]
 
 overall_diagnosis = "psych_dx"
@@ -73,49 +75,51 @@ if __name__ == "__main__":
         filtered_controls = filter_controls(output_data, diagnosis)
 
         pvalues = get_latent_deviation_pvalues(
-            output_data[["latent_deviation"]].to_numpy(), output_data, diagnosis
+            filtered_controls[["latent_deviation"]].to_numpy(),
+            filtered_controls,
+            diagnosis,
         )
 
         dx_global_pvalues[diagnosis] = pvalues.iloc[1][1]
 
-    dx_individual_pvalues = {}
+    # dx_individual_pvalues = {}
 
-    for diagnosis in diagnoses:
-        print("individual")
+    # for diagnosis in diagnoses:
+    #     print("individual")
 
-        print(diagnosis)
+    #     print(diagnosis)
 
-        dim_pvalues = {}
+    #     dim_pvalues = {}
 
-        for i in range(model_config["latent_dim"]):
-            individual_deviation = get_latent_deviation_pvalues(
-                output_data[[f"latent_deviation_{i}"]].to_numpy(),
-                output_data,
-                diagnosis,
-            )
+    #     for i in range(model_config["latent_dim"]):
+    #         individual_deviation = get_latent_deviation_pvalues(
+    #             output_data[[f"latent_deviation_{i}"]].to_numpy(),
+    #             output_data,
+    #             diagnosis,
+    #         )
 
-            dim_pvalues[f"latent_dim_{i}"] = individual_deviation.iloc[1][1]
+    #         dim_pvalues[f"latent_dim_{i}"] = individual_deviation.iloc[1][1]
 
-            print(dim_pvalues[f"latent_dim_{i}"])
+    #         print(dim_pvalues[f"latent_dim_{i}"])
 
-        dx_individual_pvalues[diagnosis] = dim_pvalues
+    #     dx_individual_pvalues[diagnosis] = dim_pvalues
 
-    print(dx_global_pvalues)
+    # print(dx_global_pvalues)
 
-    print(dx_individual_pvalues)
+    # print(dx_individual_pvalues)
 
-    from statsmodels.stats.multitest import multipletests
+    # from statsmodels.stats.multitest import multipletests
 
-    # Flatten your dictionary of p-values into a single list
-    p_values = [
-        value
-        for condition in dx_individual_pvalues.values()
-        for value in condition.values()
-    ]
+    # # Flatten your dictionary of p-values into a single list
+    # p_values = [
+    #     value
+    #     for condition in dx_individual_pvalues.values()
+    #     for value in condition.values()
+    # ]
 
-    # Perform FDR correction
-    _, p_values_corrected, _, _ = multipletests(p_values, alpha=0.05, method="fdr_bh")
+    # # Perform FDR correction
+    # _, p_values_corrected, _, _ = multipletests(p_values, alpha=0.05, method="fdr_bh")
 
-    # sum the number of significant p-values
+    # # sum the number of significant p-values
 
-    print(sum(p_values_corrected < 0.05))
+    # print(sum(p_values_corrected < 0.05))
