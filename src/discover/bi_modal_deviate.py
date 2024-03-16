@@ -135,44 +135,46 @@ if __name__ == "__main__":
 
         dx_global_pvalues[diagnosis] = pvalues.iloc[1][1]
 
-    # dx_individual_pvalues = {}
+    dx_individual_pvalues = {}
 
-    # for diagnosis in diagnoses:
-    #     print("individual")
+    for diagnosis in diagnoses:
+        print("individual")
 
-    #     print(diagnosis)
+        print(diagnosis)
 
-    #     dim_pvalues = {}
+        dim_pvalues = {}
 
-    #     for i in range(mvae.z_dim):
-    #         individual_deviation = get_latent_deviation_pvalues(
-    #             output_data[[f"latent_deviation_{i}"]].to_numpy(),
-    #             output_data,
-    #             diagnosis,
-    #         )
+        filtered_controls = filter_controls(output_data, diagnosis)
 
-    #         dim_pvalues[f"latent_dim_{i}"] = individual_deviation.iloc[1][1]
+        for i in range(mvae.z_dim):
+            individual_deviation = get_latent_deviation_pvalues(
+                filtered_controls[[f"latent_deviation_{i}"]].to_numpy(),
+                filtered_controls,
+                diagnosis,
+            )
 
-    #         print(dim_pvalues[f"latent_dim_{i}"])
+            dim_pvalues[f"latent_dim_{i}"] = individual_deviation.iloc[1][1]
 
-    #     dx_individual_pvalues[diagnosis] = dim_pvalues
+            print(dim_pvalues[f"latent_dim_{i}"])
 
-    # print(dx_global_pvalues)
+        dx_individual_pvalues[diagnosis] = dim_pvalues
 
-    # print(dx_individual_pvalues)
+    print(dx_global_pvalues)
 
-    # from statsmodels.stats.multitest import multipletests
+    print(dx_individual_pvalues)
 
-    # # Flatten your dictionary of p-values into a single list
-    # p_values = [
-    #     value
-    #     for condition in dx_individual_pvalues.values()
-    #     for value in condition.values()
-    # ]
+    from statsmodels.stats.multitest import multipletests
 
-    # # Perform FDR correction
-    # _, p_values_corrected, _, _ = multipletests(p_values, alpha=0.05, method="fdr_bh")
+    # Flatten your dictionary of p-values into a single list
+    p_values = [
+        value
+        for condition in dx_individual_pvalues.values()
+        for value in condition.values()
+    ]
 
-    # # sum the number of significant p-values
+    # Perform FDR correction
+    _, p_values_corrected, _, _ = multipletests(p_values, alpha=0.05, method="fdr_bh")
 
-    # print(sum(p_values_corrected < 0.05))
+    # sum the number of significant p-values
+
+    print(sum(p_values_corrected < 0.05))

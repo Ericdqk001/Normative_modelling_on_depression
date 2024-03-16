@@ -168,6 +168,9 @@ def process_mVAE(
         test_latent[0].scale.detach().numpy(),
     )
 
+    print(test_latent_mu.shape)
+    print(test_latent_std.shape)
+
     test_latent_mu_aligned = test_latent_mu[mask]
     test_latent_std_aligned = test_latent_std[mask]
 

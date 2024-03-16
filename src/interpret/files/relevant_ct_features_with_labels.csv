@@ -1,0 +1,45 @@
+relevant_ct_features,relevant_roi_labels,matching_var_labels
+mrisdp_6,L G_and_S_cingul-Ant,Cortical thickness in mm for left hemisphere cortical Destrieux ROI anterior part of the cingulate gyrus and sulcus
+mrisdp_7,L G_and_S_cingul-Mid-Ant,Cortical thickness in mm for left hemisphere cortical Destrieux ROI middle-anterior part of the cingulate gyrus and sulcus
+mrisdp_8,L G_and_S_cingul-Mid-Post,Cortical thickness in mm for left hemisphere cortical Destrieux ROI middle-posterior part of the cingulate gyrus and sulcus
+mrisdp_9,L G_cingul-Post-dorsal,Cortical thickness in mm for left hemisphere cortical Destrieux ROI posterior-dorsal part of the cingulate gyrus
+mrisdp_10,L G_cingul-Post-ventral,Cortical thickness in mm for left hemisphere cortical Destrieux ROI posterior-ventral part of the cingulate gyrus
+mrisdp_11,L G_cuneus,Cortical thickness in mm for left hemisphere cortical Destrieux ROI cuneus
+mrisdp_14,L G_front_inf-Triangul,Cortical thickness in mm for left hemisphere cortical Destrieux ROI triangular part of the inferior frontal gyrus
+mrisdp_19,L G_occipital_middle,Cortical thickness in mm for left hemisphere cortical Destrieux ROI middle occipital gyrus
+mrisdp_20,L G_occipital_sup,Cortical thickness in mm for left hemisphere cortical Destrieux ROI superior occipital gyrus
+mrisdp_23,L G_oc-temp_med-Parahip,Cortical thickness in mm for left hemisphere cortical Destrieux ROI parahippocampal gyrus
+mrisdp_28,L G_postcentral,Cortical thickness in mm for left hemisphere cortical Destrieux ROI postcentral gyrus
+mrisdp_29,L G_precentral,Cortical thickness in mm for left hemisphere cortical Destrieux ROI precentral gyrus
+mrisdp_31,L G_rectus,Cortical thickness in mm for left hemisphere cortical Destrieux ROI gyrus rectus
+mrisdp_39,L Lat_Fis-ant-Horizont,Cortical thickness in mm for left hemisphere cortical Destrieux ROI horizontal ramus of the anterior segment of the lateral sulcus
+mrisdp_41,L Lat_Fis-post,Cortical thickness in mm for left hemisphere cortical Destrieux ROI posterior ramus of the lateral sulcus
+mrisdp_42,L Pole_occipital,Cortical thickness in mm for left hemisphere cortical Destrieux ROI occipital pole
+mrisdp_45,L S_central,Cortical thickness in mm for left hemisphere cortical Destrieux ROI central sulcus
+mrisdp_47,L S_circular_insula_ant,Cortical thickness in mm for left hemisphere cortical Destrieux ROI anterior segment of the circular sulcus of the insula
+mrisdp_48,L S_circular_insula_inf,Cortical thickness in mm for left hemisphere cortical Destrieux ROI inferior segment of the circular sulcus of the insula
+mrisdp_50,L S_collat_transv_ant,Cortical thickness in mm for left hemisphere cortical Destrieux ROI anterior transverse collateral sulcus
+mrisdp_58,L S_oc_sup_and_transversal,Cortical thickness in mm for left hemisphere cortical Destrieux ROI superior occipital sulcus and transverse occipital sulcus
+mrisdp_61,L S_oc-temp_med_and_Lingual,Cortical thickness in mm for left hemisphere cortical Destrieux ROI medial occipito-temporal sulcus and lingual sulcus
+mrisdp_63,L S_orbital_med-olfact,Cortical thickness in mm for left hemisphere cortical Destrieux ROI medial orbital sulcus
+mrisdp_66,L S_pericallosal,Cortical thickness in mm for left hemisphere cortical Destrieux ROI pericallosal sulcus
+mrisdp_68,L S_precentral-inf-part,Cortical thickness in mm for left hemisphere cortical Destrieux ROI inferior part of the precentral sulcus
+mrisdp_69,L S_precentral-sup-part,Cortical thickness in mm for left hemisphere cortical Destrieux ROI superior part of the precentral sulcus
+mrisdp_71,L S_subparietal,Cortical thickness in mm for left hemisphere cortical Destrieux ROI subparietal sulcus
+mrisdp_81,R G_and_S_cingul-Mid-Ant,Cortical thickness in mm for right hemisphere cortical Destrieux ROI middle-anterior part of the cingulate gyrus and sulcus
+mrisdp_84,R G_cingul-Post-ventral,Cortical thickness in mm for right hemisphere cortical Destrieux ROI posterior-ventral part of the cingulate gyrus
+mrisdp_85,R G_cuneus,Cortical thickness in mm for right hemisphere cortical Destrieux ROI cuneus
+mrisdp_94,R G_occipital_sup,Cortical thickness in mm for right hemisphere cortical Destrieux ROI superior occipital gyrus
+mrisdp_96,R G_oc-temp_med-Lingual,Cortical thickness in mm for right hemisphere cortical Destrieux ROI lingual gyrus
+mrisdp_97,R G_oc-temp_med-Parahip,Cortical thickness in mm for right hemisphere cortical Destrieux ROI parahippocampal gyrus
+mrisdp_102,R G_postcentral,Cortical thickness in mm for right hemisphere cortical Destrieux ROI postcentral gyrus
+mrisdp_109,R G_temp_sup-Plan_polar,Cortical thickness in mm for right hemisphere cortical Destrieux ROI planum polare of the superior temporal gyrus
+mrisdp_116,R Pole_occipital,Cortical thickness in mm for right hemisphere cortical Destrieux ROI occipital pole
+mrisdp_121,R S_circular_insula_ant,Cortical thickness in mm for right hemisphere cortical Destrieux ROI anterior segment of the circular sulcus of the insula
+mrisdp_122,R S_circular_insula_inf,Cortical thickness in mm for right hemisphere cortical Destrieux ROI inferior segment of the circular sulcus of the insula
+mrisdp_123,R S_circular_insula_sup,Cortical thickness in mm for right hemisphere cortical Destrieux ROI superior segment of the circular sulcus of the insula
+mrisdp_135,R S_oc-temp_med_and_Lingual,Cortical thickness in mm for right hemisphere cortical Destrieux ROI medial occipito-temporal sulcus and lingual sulcus
+mrisdp_137,R S_orbital_med-olfact,Cortical thickness in mm for right hemisphere cortical Destrieux ROI medial orbital sulcus
+mrisdp_138,R S_orbital-H_Shaped,Cortical thickness in mm for right hemisphere cortical Destrieux ROI orbital sulci
+mrisdp_142,R S_precentral-inf-part,Cortical thickness in mm for right hemisphere cortical Destrieux ROI inferior part of the precentral sulcus
+mrisdp_143,R S_precentral-sup-part,Cortical thickness in mm for right hemisphere cortical Destrieux ROI superior part of the precentral sulcus
