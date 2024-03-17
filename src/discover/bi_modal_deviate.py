@@ -13,10 +13,10 @@ from discover.utils import (
 from multiviewae import mVAE
 from sklearn.preprocessing import StandardScaler
 
-CT_DATA_PATH = Path("processed_data/ct_postCombat_residSexAge_060623.csv")
+CT_DATA_PATH = Path("ABCD_mVAE_LizaEric/data/ct_postCombat_residSexAge_060623.csv")
 
 FC_DATA_PATH = Path(
-    "ABCD_mVAE_LizaEric/data/rsfmri_gordon_postCombat_residSexAge_060623.csv"
+    "ABCD_mVAE_LizaEric/data/rsfmri_gordon_no_dup_postCombat_residSexAge_060623.csv"
 )
 
 DX_PATH = Path("ABCD_mVAE_LizaEric/data/all_psych_dx_r5.csv")
@@ -119,7 +119,7 @@ if __name__ == "__main__":
         output_data.copy(), diagnoses=diagnoses, overall_diagnosis=overall_diagnosis
     )
 
-    dx_global_pvalues = {}
+    dx_global_pvalues_coef = {}
 
     for diagnosis in diagnoses:
         print("global")
@@ -127,48 +127,55 @@ if __name__ == "__main__":
 
         filtered_controls = filter_controls(output_data, diagnosis)
 
-        pvalues = get_latent_deviation_pvalues(
+        pvalues, coef = get_latent_deviation_pvalues(
             filtered_controls[["latent_deviation"]].to_numpy(),
             filtered_controls,
             diagnosis,
         )
 
-        dx_global_pvalues[diagnosis] = pvalues.iloc[1][1]
+        print(pvalues)
 
-    dx_individual_pvalues = {}
+        print(coef)
+
+        dx_global_pvalues_coef[diagnosis] = {
+            "p_value": pvalues.iloc[1][1],
+            "coef": coef.iloc[1][1],
+        }
+
+    dx_individual_pvalues_coef = {}
 
     for diagnosis in diagnoses:
         print("individual")
 
         print(diagnosis)
 
-        dim_pvalues = {}
+        dim_pvalues_coef = {}
 
         filtered_controls = filter_controls(output_data, diagnosis)
 
         for i in range(mvae.z_dim):
-            individual_deviation = get_latent_deviation_pvalues(
+            p_value, coef = get_latent_deviation_pvalues(
                 filtered_controls[[f"latent_deviation_{i}"]].to_numpy(),
                 filtered_controls,
                 diagnosis,
             )
 
-            dim_pvalues[f"latent_dim_{i}"] = individual_deviation.iloc[1][1]
+            dim_pvalues_coef[f"latent_dim_{i}_p_value"] = p_value.iloc[1][1]
 
-            print(dim_pvalues[f"latent_dim_{i}"])
+            dim_pvalues_coef[f"latent_dim_{i}_coef"] = coef.iloc[1][1]
 
-        dx_individual_pvalues[diagnosis] = dim_pvalues
+        dx_individual_pvalues_coef[diagnosis] = dim_pvalues_coef
 
-    print(dx_global_pvalues)
+    print(dx_global_pvalues_coef)
 
-    print(dx_individual_pvalues)
+    print(dx_individual_pvalues_coef)
 
     from statsmodels.stats.multitest import multipletests
 
     # Flatten your dictionary of p-values into a single list
     p_values = [
         value
-        for condition in dx_individual_pvalues.values()
+        for condition in dx_individual_pvalues_coef.values()
         for value in condition.values()
     ]
 

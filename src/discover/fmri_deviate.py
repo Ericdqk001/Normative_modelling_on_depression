@@ -13,7 +13,7 @@ from discover.utils import (
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 DATA_PATH = Path(
-    "ABCD_mVAE_LizaEric/data/rsfmri_gordon_postCombat_residSexAge_060623.csv"
+    "ABCD_mVAE_LizaEric/data/rsfmri_gordon_no_dup_postCombat_residSexAge_060623.csv"
 )
 
 DX_PATH = Path("ABCD_mVAE_LizaEric/data/all_psych_dx_r5.csv")
@@ -27,6 +27,13 @@ with open(Path("ABCD_mVAE_LizaEric/data/subs_test.pkl"), "rb") as f:
 
 with open(Path("ABCD_mVAE_LizaEric/data", "phenotype_roi_mapping_with_fmri.json")) as f:
     phenotype_roi_mapping = json.loads(f.read())
+
+# Save phenotype_roi_mapping
+
+with open(
+    Path("ABCD_mVAE_LizaEric/data", "phenotype_roi_mapping_with_fmri.json"), "w"
+) as f:
+    f.write(json.dumps(phenotype_roi_mapping))
 
 
 check_point_path = Path("artifacts/bright-donkey-3:v0/model_weights.pt")
@@ -66,7 +73,7 @@ if __name__ == "__main__":
         output_data.copy(), diagnoses=diagnoses, overall_diagnosis=overall_diagnosis
     )
 
-    dx_global_pvalues = {}
+    dx_global_pvalues_coef = {}
 
     for diagnosis in diagnoses:
         print("global")
@@ -74,52 +81,45 @@ if __name__ == "__main__":
 
         filtered_controls = filter_controls(output_data, diagnosis)
 
-        pvalues = get_latent_deviation_pvalues(
+        pvalues, coef = get_latent_deviation_pvalues(
             filtered_controls[["latent_deviation"]].to_numpy(),
             filtered_controls,
             diagnosis,
         )
 
-        dx_global_pvalues[diagnosis] = pvalues.iloc[1][1]
+        print(pvalues)
 
-    # dx_individual_pvalues = {}
+        print(coef)
 
-    # for diagnosis in diagnoses:
-    #     print("individual")
+        dx_global_pvalues_coef[diagnosis] = {
+            "p_value": pvalues.iloc[1][1],
+            "coef": coef.iloc[1][1],
+        }
 
-    #     print(diagnosis)
+    dx_individual_pvalues_coef = {}
 
-    #     dim_pvalues = {}
+    for diagnosis in diagnoses:
+        print("individual")
 
-    #     for i in range(model_config["latent_dim"]):
-    #         individual_deviation = get_latent_deviation_pvalues(
-    #             output_data[[f"latent_deviation_{i}"]].to_numpy(),
-    #             output_data,
-    #             diagnosis,
-    #         )
+        print(diagnosis)
 
-    #         dim_pvalues[f"latent_dim_{i}"] = individual_deviation.iloc[1][1]
+        dim_pvalues_coef = {}
 
-    #         print(dim_pvalues[f"latent_dim_{i}"])
+        filtered_controls = filter_controls(output_data, diagnosis)
 
-    #     dx_individual_pvalues[diagnosis] = dim_pvalues
+        for i in range(model_config["latent_dim"]):
+            p_value, coef = get_latent_deviation_pvalues(
+                filtered_controls[[f"latent_deviation_{i}"]].to_numpy(),
+                filtered_controls,
+                diagnosis,
+            )
 
-    # print(dx_global_pvalues)
+            dim_pvalues_coef[f"latent_dim_{i}_p_value"] = p_value.iloc[1][1]
 
-    # print(dx_individual_pvalues)
+            dim_pvalues_coef[f"latent_dim_{i}_coef"] = coef.iloc[1][1]
 
-    # from statsmodels.stats.multitest import multipletests
+        dx_individual_pvalues_coef[diagnosis] = dim_pvalues_coef
 
-    # # Flatten your dictionary of p-values into a single list
-    # p_values = [
-    #     value
-    #     for condition in dx_individual_pvalues.values()
-    #     for value in condition.values()
-    # ]
+    print(dx_global_pvalues_coef)
 
-    # # Perform FDR correction
-    # _, p_values_corrected, _, _ = multipletests(p_values, alpha=0.05, method="fdr_bh")
-
-    # # sum the number of significant p-values
-
-    # print(sum(p_values_corrected < 0.05))
+    print(dx_individual_pvalues_coef)

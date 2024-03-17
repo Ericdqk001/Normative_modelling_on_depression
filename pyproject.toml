@@ -20,7 +20,8 @@ dependencies = ["ruff",
 "seaborn",
 "pysurfer",
 "nilearn",
-"plotly",]
+"plotly",
+"nichord",]
 
 [tool.ruff]
 select = ["E", "F", "D", "I"]

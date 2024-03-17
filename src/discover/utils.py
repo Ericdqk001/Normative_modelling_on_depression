@@ -34,6 +34,9 @@ def separate_latent_deviation(mu_train, mu_sample, var_sample):
 
 def latent_pvalues(latent, target, type):
     pval_df = pd.DataFrame({"labels": ["const", "latent"]})
+
+    coef_df = pd.DataFrame({"labels": ["const", "latent"]})
+
     for i in range(latent.shape[1]):
         latent_curr = latent[:, i]
         latent_curr = sm.tools.tools.add_constant(latent_curr)
@@ -42,8 +45,18 @@ def latent_pvalues(latent, target, type):
         else:
             model = Logit(target, latent_curr)
         model_fit = model.fit()
+        print("P VALUES")
+        print(model_fit.pvalues.values)
+        print("coefs")
+        print(model_fit.params.values)
+        print("SUMMARY")
+        print(model_fit.summary())
+
         pval_df["latent {0}".format(i)] = list(model_fit.pvalues.values)
-    return pval_df
+
+        coef_df["latent {0}".format(i)] = list(model_fit.params.values)
+
+    return pval_df, coef_df
 
 
 def process(
@@ -241,9 +254,11 @@ def get_latent_deviation_pvalues(
     output_data,
     diagnosis,
 ):
-    DX_pval = latent_pvalues(latent_deviations, output_data[diagnosis], type="discrete")
+    DX_pval, DX_coef = latent_pvalues(
+        latent_deviations, output_data[diagnosis], type="discrete"
+    )
 
-    return DX_pval
+    return DX_pval, DX_coef
 
 
 def filter_controls(output_data, diagnosis):

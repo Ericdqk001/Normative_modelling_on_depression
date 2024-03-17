@@ -1,3 +1,4 @@
+# %%
 from pathlib import Path
 
 import matplotlib.pyplot as plt
@@ -56,7 +57,8 @@ plotting.plot_surf_roi(
     title="Left Hemisphere Lateral",
     colorbar=False,
     cmap="gist_rainbow",
-).savefig(Path(image_save_path, "left_lateral.png"))
+)
+# .savefig(Path(image_save_path, "left_lateral.png"))
 
 # Plotting the left hemisphere, medial view
 plotting.plot_surf_roi(
@@ -69,7 +71,8 @@ plotting.plot_surf_roi(
     title="Left Hemisphere Medial",
     colorbar=False,
     cmap="gist_rainbow",
-).savefig(Path(image_save_path, "left_medial.png"))
+)
+# .savefig(Path(image_save_path, "left_medial.png"))
 
 # Plotting the right hemisphere, lateral view
 plotting.plot_surf_roi(
@@ -82,7 +85,8 @@ plotting.plot_surf_roi(
     title="Right Hemisphere Lateral",
     colorbar=False,
     cmap="gist_rainbow",
-).savefig(Path(image_save_path, "right_lateral.png"))
+)
+# .savefig(Path(image_save_path, "right_lateral.png"))
 
 # Plotting the right hemisphere, medial view
 plotting.plot_surf_roi(
@@ -95,11 +99,13 @@ plotting.plot_surf_roi(
     title="Right Hemisphere Medial",
     colorbar=False,
     cmap="gist_rainbow",
-).savefig(Path(image_save_path, "right_medial.png"))
+)
+# .savefig(Path(image_save_path, "right_medial.png"))
 
 plotting.show()
 
 
+# %%
 # Plot the images together
 
 image_paths = [
