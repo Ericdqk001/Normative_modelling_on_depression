@@ -171,3 +171,4 @@ plots/
 deviation_plots/
 results/
 src/mcvae/
+.DS_Store

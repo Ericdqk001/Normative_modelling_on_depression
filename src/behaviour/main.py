@@ -1,3 +1,3 @@
-from behaviour.scripts.prepare_lca_data import main
+from behaviour.scripts.prepare_lca_data import cbcl_prepare
 
-main()
+cbcl_prepare()

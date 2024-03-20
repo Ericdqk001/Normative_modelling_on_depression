@@ -3,7 +3,7 @@ from pathlib import Path
 import pandas as pd
 
 
-def main():
+def cbcl_prepare():
     """Prepare the CBCL data for LCA analysis by selecting the baseline data and
     removing missing values."""
     data_path = Path(
@@ -32,6 +32,9 @@ def main():
     # Create dummy variables using a threshold of 65 for the t scores
     filtered_cbcl = (filtered_cbcl >= 65).astype(int)
 
+    # Add one here because LCA expects 1/2 rather than 0/1
+    filtered_cbcl += 1
+
     # Save the filtered data
     filtered_cbcl_save_path = Path("processed_data")
     filtered_cbcl.to_csv(
@@ -43,4 +46,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    cbcl_prepare()
