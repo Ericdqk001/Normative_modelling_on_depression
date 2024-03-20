@@ -28,14 +28,6 @@ with open(Path("ABCD_mVAE_LizaEric/data/subs_test.pkl"), "rb") as f:
 with open(Path("ABCD_mVAE_LizaEric/data", "phenotype_roi_mapping_with_fmri.json")) as f:
     phenotype_roi_mapping = json.loads(f.read())
 
-# Save phenotype_roi_mapping
-
-with open(
-    Path("ABCD_mVAE_LizaEric/data", "phenotype_roi_mapping_with_fmri.json"), "w"
-) as f:
-    f.write(json.dumps(phenotype_roi_mapping))
-
-
 check_point_path = Path("artifacts/bright-donkey-3:v0/model_weights.pt")
 
 model_config = {

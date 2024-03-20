@@ -1,28 +1,47 @@
-import pandas as pd
+import json
+from pathlib import Path
 
-path = "processed_data/rsfmri_gordon_no_dup_postCombat_residSexAge_060623.csv"
+import matplotlib.pyplot as plt
+from nichord.chord import plot_chord
 
-df = pd.read_csv(path)
+with open(Path("ABCD_mVAE_LizaEric/data", "phenotype_roi_mapping_with_fmri.json")) as f:
+    phenotype_roi_mapping = json.loads(f.read())
 
-print(len(list(df.columns)))
+fc_features = phenotype_roi_mapping["rsfmri_gordon_no_dup"]
+
+fc_weights_path = Path("src/interpret/files/fc_features_weight.json")
+
+with open(fc_weights_path) as f:
+    fc_weights = json.loads(f.read())
+
+weights = list(fc_weights.values())
+
+# MinMax normalisation
+
+weights = [(i - min(weights)) / (max(weights) - min(weights)) for i in weights]
+
+# Thresholding at 0.5
+
+# weights = [i if i > 0.5 else 0 for i in weights]
 
 idx_to_label = {
-    0: "AUD",
-    1: "CON",
-    2: "CPN",
-    3: "DMN",
-    4: "DAN",
-    5: "FPN",
-    6: "None",
-    7: "RTN",
-    8: "SN",
-    9: "SHN",
-    10: "SMN",
-    11: "VAN",
-    12: "VIS",
+    0: "AUD",  # auditory network
+    1: "CON",  # cingulo-opercular network
+    2: "CPN",  # cingulo-parietal network
+    3: "DMN",  # default mode network
+    4: "DAN",  # dorsal attention network
+    5: "FPN",  # fronto-parietal network
+    6: "NN",  # none network
+    7: "RTN",  # retrosplenial-temporal network
+    8: "SN",  # salience network
+    9: "SHN",  # somatomotor hand network
+    10: "SMN",  # somatomotor mouth network
+    11: "VAN",  # ventral attention network
+    12: "VIS",  # visual network
 }
 
-# All possible edges between networks
+# Edges without duplicates
+
 edges = [
     (0, 0),
     (0, 1),
@@ -37,7 +56,6 @@ edges = [
     (0, 10),
     (0, 11),
     (0, 12),
-    (1, 0),
     (1, 1),
     (1, 2),
     (1, 3),
@@ -88,6 +106,7 @@ edges = [
     (5, 10),
     (5, 11),
     (5, 12),
+    (6, 5),
     (6, 6),
     (6, 7),
     (6, 8),
@@ -115,5 +134,22 @@ edges = [
     (10, 12),
     (11, 11),
     (11, 12),
+    (12, 11),
     (12, 12),
 ]
+
+# fp_chord = 'ex0_chord.png'
+plot_chord(
+    idx_to_label,
+    edges,
+    edge_weights=weights,
+    fp_chord=None,
+    linewidths=5,
+    alphas=0.9,
+    do_ROI_circles=True,
+    label_fontsize=70,
+    # July 2023 update allows changing label fontsize
+    do_ROI_circles_specific=True,
+    ROI_circle_radius=0.02,
+)
+plt.show()

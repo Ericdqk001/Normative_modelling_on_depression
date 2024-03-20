@@ -2,6 +2,7 @@
 import json
 from pathlib import Path
 
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import torch
@@ -25,7 +26,7 @@ mvae = mVAE.load_from_checkpoint(check_point_path)
 mvae._training = False
 
 loc_tensor = torch.zeros(1, 15)
-loc_tensor[0, 11] = -5
+loc_tensor[0, 11] = 5
 logvar_tensor = torch.zeros(1, 15)
 
 # Initialise an object of the class with these tensors
@@ -83,20 +84,20 @@ fc_features_weight_path = Path("src/interpret/files/fc_features_weight.json")
 with open(fc_features_weight_path, "w") as f:
     f.write(json.dumps(fc_features_weight))
 
-# # Plotting the distribution
-# plt.figure(figsize=(10, 6))
-# plt.hist(reconstructed_ct_flat, bins=30, alpha=0.75, color="blue", edgecolor="black")
-# plt.title("Distribution of Cortical Thickness Measurements")
-# plt.xlabel("Cortical Thickness Value")
-# plt.ylabel("Frequency")
-# plt.grid(True)
-# plt.show()
+# Plotting the distribution
+plt.figure(figsize=(10, 6))
+plt.hist(reconstructed_ct_flat, bins=30, alpha=0.75, color="blue", edgecolor="black")
+plt.title("Distribution of Cortical Thickness Measurements")
+plt.xlabel("Cortical Thickness Value")
+plt.ylabel("Frequency")
+plt.grid(True)
+plt.show()
 
-# # Plotting the distribution
-# plt.figure(figsize=(10, 6))
-# plt.hist(reconstructed_fc_flat, bins=30, alpha=0.75, color="blue", edgecolor="black")
-# plt.title("Distribution of Cortical Thickness Measurements")
-# plt.xlabel("Cortical Thickness Value")
-# plt.ylabel("Frequency")
-# plt.grid(True)
-# plt.show()
+# Plotting the distribution
+plt.figure(figsize=(10, 6))
+plt.hist(reconstructed_fc_flat, bins=30, alpha=0.75, color="blue", edgecolor="black")
+plt.title("Distribution of Cortical Thickness Measurements")
+plt.xlabel("Cortical Thickness Value")
+plt.ylabel("Frequency")
+plt.grid(True)
+plt.show()
